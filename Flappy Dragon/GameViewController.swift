@@ -25,6 +25,7 @@ class GameViewController: UIViewController {
     }
     
     func presentScene() {
+        //mesmo setando um tamanho pequeno de tela, ela irá se redimensionar de acordo com o tamanho do Iphone
         let scene = GameScene(size: CGSize(width: 320, height: 568))
         scene.scaleMode = .aspectFill
         stage.presentScene(scene)

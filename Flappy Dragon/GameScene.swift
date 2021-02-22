@@ -25,6 +25,10 @@ class GameScene: SKScene {
     var playerCategory: UInt32 = 1
     var enemyCategory: UInt32 = 2
     var scoreCategory: UInt32 = 4
+    var timer: Timer!
+    weak var gameViewController: GameViewController?
+    let scoreSound = SKAction.playSoundFileNamed("score.mp3", waitForCompletion: false)
+    let gameOverSound = SKAction.playSoundFileNamed("hit.mp3", waitForCompletion: false)
 
     
     override func didMove(to view: SKView) {
@@ -158,6 +162,32 @@ class GameScene: SKScene {
         addChild(laser)
     }
     
+    func gameOver() {
+        timer.invalidate()
+        player.zRotation = 0
+        player.texture = SKTexture(imageNamed: "playerDead")
+        
+        //acao para remover todos os nos da cena
+        for node in self.children {
+            node.removeAllActions()
+        }
+        
+        player.physicsBody?.isDynamic = false
+        gameFinished = true
+        gameStarted = false
+        
+        Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false) { (timer) in
+            let gameOverLabel = SKLabelNode(fontNamed: "Chalkduster")
+            gameOverLabel.fontColor = .red
+            gameOverLabel.fontSize = 40
+            gameOverLabel.text = "Game Over"
+            gameOverLabel.position = CGPoint(x: self.size.width/2, y: self.size.height/2)
+            gameOverLabel.zPosition = 5
+            self.addChild(gameOverLabel)
+            self.restart = true
+        }
+    }
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if !gameFinished {
             if !gameStarted {
@@ -174,13 +204,18 @@ class GameScene: SKScene {
                 
                 gameStarted = true
                 
-                Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { (timer) in
+                timer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { (timer) in
                     self.spawnEnemies()
                 }
                 
             } else {
                 player.physicsBody?.velocity = CGVector.zero
                 player.physicsBody?.applyImpulse(CGVector(dx: 0, dy: flyForce))
+            }
+        } else {
+            if restart {
+                restart = false
+                gameViewController?.presentScene()
             }
         }
     }
@@ -202,8 +237,10 @@ extension GameScene: SKPhysicsContactDelegate {
             if contact.bodyA.categoryBitMask == scoreCategory || contact.bodyB.categoryBitMask == scoreCategory {
                 score += 1
                 scoreLabel.text = "\(score)"
+                run(scoreSound)
             } else if contact.bodyA.categoryBitMask == enemyCategory || contact.bodyB.categoryBitMask == enemyCategory {
-                print("GameOver!!")
+                gameOver()
+                run(gameOverSound)
             }
         }
     }
